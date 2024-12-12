@@ -1,0 +1,89 @@
+# Ignore system-generated files
+.DS_Store
+Thumbs.db
+
+# Ignore local user settings
+UserSettings/
+
+# Ignore temporary folders
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+
+# Ignore auto-generated Visual Studio files
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+
+# Ignore Unity cache files
+*.stackdump
+*.log
+
+# Ignore compiler-generated files
+*.pdb
+*.mdb
+*.exe
+*.ilk
+*.meta
+# Ignore system-generated files
+.DS_Store
+Thumbs.db
+
+# Ignore local user settings
+UserSettings/
+
+# Ignore temporary folders
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+
+# Ignore auto-generated Visual Studio files
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+
+# Ignore Unity cache files
+*.stackdump
+*.log
+
+# Ignore compiler-generated files
+*.pdb
+*.mdb
+*.exe
+*.ilk
+*.meta
+*.idb
+*.class
+
+# Ignore script debugging files
+*.pidb.meta
+*.pdb.meta
+
+# Ignore system-generated files
+*.swp
+*.sw~
+
+# Ignore package manager cache
+Packages/manifest.json.meta
+Packages/packages-lock.json
+
