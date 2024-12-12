@@ -2,9 +2,9 @@
 Thesis of master
 
 ## GameObject
-- RaytracingController : Handles the setup and execution of ray tracing operations, such as managing light paths and reflections within the game world.
-- WallController : Manages the behavior, positioning, and properties of walls in the game environment, including interactions and visual updates.
+- **RaytracingController** : Handles the setup and execution of ray tracing operations, such as managing light paths and reflections within the game world.
+- **WallController** : Manages the behavior, positioning, and properties of walls in the game environment, including interactions and visual updates.
 
 ## Script
-- RoomBuilder : Automates the creation and layout of rooms based on predefined parameters.
-- Monte Carlo Ray Tracing : Implements Monte Carlo algorithms for simulating realistic light reflecting.
+- **RoomBuilder** : Automates the creation and layout of rooms based on predefined parameters.
+- **Monte Carlo Ray Tracing** : Implements Monte Carlo algorithms for simulating realistic light reflecting.
