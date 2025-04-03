@@ -6,5 +6,7 @@ Thesis of master
 - **WallController** : Manages the behavior, positioning, and properties of walls in the game environment, including interactions and visual updates.
 
 ## Script
-- **RoomBuilder(Assets/Roombuilder.cs)** : Automates the creation and layout of rooms based on predefined parameters.
-- **Monte Carlo Ray Tracing(Assets/MonteCarloRayTracing.cs)** : Implements Monte Carlo algorithms for simulating realistic light reflecting.
+- **WallManager.cs** : Automates the creation and layout of rooms based on predefined parameters.
+- **MonteCarloRayTracingcs** : Implements Monte Carlo algorithms for simulating realistic light reflecting.
+- **IntersectionDetector.cs** : Calculate the intersection point of the rays emitted by the four base stations based on the ray information and collision point information
+- **IntersectionLogger.cs** : Store intersection information for subsequent viewing and processing

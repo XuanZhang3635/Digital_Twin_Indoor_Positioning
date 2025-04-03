@@ -386,8 +386,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1498122548}
-  - component: {fileID: 1498122547}
   - component: {fileID: 1498122549}
+  - component: {fileID: 1498122550}
   m_Layer: 0
   m_Name: RaytracingController
   m_TagString: Untagged
@@ -395,22 +395,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1498122547
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1498122546}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 76d2bd47655ab4851ae35164126d4864, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  baseStationPrefab: {fileID: 2364495734601519455, guid: bf018afa2ec274ebab12a4c2fe940861, type: 3}
-  raysPerBaseStation: 5
-  aoaRanges: []
-  maxReflections: 5
 --- !u!4 &1498122548
 Transform:
   m_ObjectHideFlags: 0
@@ -447,6 +431,22 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &1498122550
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1498122546}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 76d2bd47655ab4851ae35164126d4864, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  baseStationPrefab: {fileID: 2364495734601519455, guid: bf018afa2ec274ebab12a4c2fe940861, type: 3}
+  raysPerBaseStation: 500
+  aoaRanges: []
+  maxReflections: 5
 --- !u!1 &1719427074
 GameObject:
   m_ObjectHideFlags: 0
@@ -456,7 +456,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1719427076}
-  - component: {fileID: 1719427075}
+  - component: {fileID: 1719427077}
   m_Layer: 0
   m_Name: WallController
   m_TagString: Untagged
@@ -464,23 +464,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1719427075
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1719427074}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe9b1b41bf3414c46aca505899aadccf, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  wallPrefab: {fileID: 5968695774120939811, guid: 41d8935bd6e8743038700bdc0e87cbbd, type: 3}
-  rayTracingScript: {fileID: 1498122547}
-  wallHeight: 5
-  wallThickness: 0.1
-  padding: 1
 --- !u!4 &1719427076
 Transform:
   m_ObjectHideFlags: 0
@@ -496,6 +479,23 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1719427077
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1719427074}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe9b1b41bf3414c46aca505899aadccf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  wallPrefab: {fileID: 5968695774120939811, guid: 41d8935bd6e8743038700bdc0e87cbbd, type: 3}
+  rayTracingScript: {fileID: 1498122550}
+  wallHeight: 6
+  wallThickness: 0.1
+  padding: 1
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
