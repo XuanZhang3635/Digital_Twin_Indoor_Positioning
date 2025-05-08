@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class IntersectionDetector
 {
-    private float intersectionThreshold = 0.2f; // Intersection error range
+    private float intersectionThreshold = 0.5f; // Intersection error range
     private IntersectionLogger intersectionLogger;
 
     public IntersectionDetector(IntersectionLogger logger)

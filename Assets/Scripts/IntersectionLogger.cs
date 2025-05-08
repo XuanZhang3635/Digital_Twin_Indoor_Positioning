@@ -5,7 +5,7 @@ using UnityEngine;
 public class IntersectionLogger
 {
     private Dictionary<Vector3, int> intersectionCounts = new Dictionary<Vector3, int>(); // Intersection points and their number
-    private float intersectionThreshold = 0.2f; // Error margin to avoid storing duplicate points
+    private float intersectionThreshold = 0.05f; // Error margin to avoid storing duplicate points
 
     public void LogIntersection(Vector3 intersectionPoint)
     {

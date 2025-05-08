@@ -1,32 +1,36 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
+// 对于每个AP，采样 l 个角度
+// 
 public class MonteCarloRayTracing : MonoBehaviour
 {
     public GameObject baseStationPrefab; // Base station prefab
     public int raysPerBaseStation = 10; // Number of rays emitted per base station
-    public Vector2[] aoaRanges; // AoA range for each base station
+    // public Vector2[] aoaRanges; // AoA range for each base station
     private GameObject[] baseStations; // Array of base station objects
     private Vector3[] baseStationPositions = new Vector3[] // Base station positions
     {
-        new Vector3(0f, 3f, 0f),       // Base station 1
-        new Vector3(15.14f, 3f, 0f),   // Base station 2
-        new Vector3(15.14f, 3f, 12.8f),// Base station 3
-        new Vector3(0f, 3f, 12.8f)     // Base station 4
+        new Vector3(7f, 2f, -28f),  // Base station 1
+        new Vector3(2f, 2f, -28f),  // Base station 2
+        new Vector3(3f, 2f, -20f),  // Base station 3
+        new Vector3(7f, 2f, -20f)   // Base station 4
     };
-
     private GameObject rayContainer; // Container for storing rays
     public int maxReflections = 5; // Maximum number of reflections
     private List<RayData> rays = new List<RayData>(); // List to store ray data
     private IntersectionLogger intersectionLogger; // 交点记录器
     private IntersectionDetector intersectionDetector; 
+    private VoxelIntersectionCounter voxelCounter;
+
     void Start()
     {
         // Initialize base stations
         InitializeBaseStations();
 
         // Set AoA ranges (manually input)
-        InitializeAoARanges();
+        // InitializeAoARanges();
 
         // Initialize ray container
         rayContainer = new GameObject("RayContainer");
@@ -36,6 +40,36 @@ public class MonteCarloRayTracing : MonoBehaviour
 
         intersectionLogger = new IntersectionLogger();
         intersectionDetector = new IntersectionDetector(intersectionLogger);
+        voxelCounter = new VoxelIntersectionCounter();
+
+        GameObject roof = GameObject.Find("roof"); // 注意名字大小写要完全匹配！
+        if (roof != null)
+        {
+            Debug.Log("Roof found: " + roof.name);
+            MeshCollider mc = roof.GetComponent<MeshCollider>();
+            if (mc == null)
+            {
+                mc = roof.AddComponent<MeshCollider>();
+                mc.convex = false;
+            }
+            
+            // ✅ 关键：绑定 mesh 到 collider
+            MeshFilter mf = roof.GetComponentInChildren<MeshFilter>();
+            if (mf != null && mf.sharedMesh != null)
+            {
+                mc.sharedMesh = mf.sharedMesh;
+                Debug.Log("MeshCollider 绑定成功！");
+            }
+            else
+            {
+                Debug.LogWarning("MeshFilter 或 sharedMesh 为空！");
+            }
+
+        }
+        else
+        {
+            Debug.LogWarning("Couldn't find GameObject named 'roof'");
+        }
     }
 
     void Update()
@@ -49,9 +83,17 @@ public class MonteCarloRayTracing : MonoBehaviour
 
 	void OnApplicationQuit()
 	{
+        voxelCounter.CountVoxels(rays);
+
         intersectionLogger.SaveRaysToFile(rays);
         intersectionDetector.DetectIntersections(rays);
         intersectionLogger.SaveIntersectionsToFile();
+
+        Vector3 estimate = VoxelUtils.ComputeAveragePositionFromFile("Assets/FourRayIntersections.txt");
+        Debug.Log("碰撞点统计最终位置：" + estimate);
+        Vector3 estimate1 = VoxelUtils.ComputeAveragePositionFromFile("Assets/voxel_hits.txt");
+        Debug.Log("voxel统计最终位置：" + estimate1);
+
 	}
 
 	// Initialize base station positions
@@ -65,17 +107,6 @@ public class MonteCarloRayTracing : MonoBehaviour
             baseStations[i].name = "BaseStation" + (i + 1); // Set base station name
         }
     }
-    void InitializeAoARanges()
-    {
-        aoaRanges = new Vector2[]
-        {
-            new Vector2(-21.65f, 44.02f), // AoA range for base station 1
-            new Vector2(-21.65f, 44.02f), // AoA range for base station 2
-            new Vector2(-21.65f, 44.02f), // AoA range for base station 3
-            new Vector2(-21.65f, 44.02f)  // AoA range for base station 4
-        };
-    }
-
     // Initialize ray data
     void InitializeRays()
     {
@@ -87,39 +118,64 @@ public class MonteCarloRayTracing : MonoBehaviour
             Color.yellow    // Ray color for base station 4
         };
 
+        // 每个基站的 azimuth 和 elevation (方位角和俯仰角)
+        float[] azimuths = new float[]
+        {
+            -0.104682660304528f,
+            0.158604703949607f,
+            -0.255902581057323f,
+            -0.325480510442599f
+        };
+
+        float[] elevations = new float[]
+        {
+            0.00712837955108657f,
+            -0.0737631890991050f,
+            -0.235052160624987f,
+            -0.0957842433025755f
+        };
+
+        // 每个基站的安装姿态角度
+        float[] APpitch = new float[] { 0f, 0f, 0f, 0f };
+        float[] APyaw = new float[] { 135f, 45f, -60f, -110f };
+        
+        float azimuthOffsetDeg = 20f; // 正负20度
+        float elevationOffsetDeg = 10f; 
+
         for (int i = 0; i < baseStations.Length; i++)
         {
             Vector3 baseStationPosition = baseStations[i].transform.position;
-            Vector2 aoaRange = aoaRanges[i];
 
             for (int j = 0; j < raysPerBaseStation; j++)
             {
-                // Randomly sample angles within the AoA range
-                float azimuthAngle = Random.Range(aoaRange.x, aoaRange.y); // Azimuth angle
-                float elevationAngle = Random.Range(-10f, 10f); // Elevation angle range
+                // 计算该基站的 azimuth 角范围（单位：弧度）
+                float azimuthDeg = Mathf.Rad2Deg * azimuths[i] + APyaw[i];
+                // 添加一个随机数
+                azimuthDeg += UnityEngine.Random.Range(-azimuthOffsetDeg, azimuthOffsetDeg);
+                float azimuthRad =  Mathf.Deg2Rad * azimuthDeg;
+                // 计算 elevation
+                float elevationDeg = Mathf.Rad2Deg * elevations[i];
+                // 添加一个随机数
+                elevationDeg += UnityEngine.Random.Range(-elevationOffsetDeg, elevationOffsetDeg);
+                float elevationRad =  Mathf.Deg2Rad * elevationDeg; 
 
-                // Convert angles to direction vector
-                Vector3 direction = SphericalToCartesian(azimuthAngle, elevationAngle);
-
-                // Create a new GameObject to hold the LineRenderer component
+                // 在局部坐标系下计算方向向量
+                Vector3 worldDirection = SphericalToCartesianRad(azimuthRad, elevationRad);
                 GameObject lineObject = new GameObject("Ray_" + i + "_" + j);
-                lineObject.transform.parent = rayContainer.transform; // Set parent object (organize rays)
+                lineObject.transform.parent = rayContainer.transform;
 
-                // Add LineRenderer component to each ray
                 LineRenderer lineRenderer = lineObject.AddComponent<LineRenderer>();
+                lineRenderer.startWidth = 0.05f;
+                lineRenderer.endWidth = 0.05f;
+                lineRenderer.material = new Material(Shader.Find("Sprites/Default"));
+                lineRenderer.startColor = baseStationColors[i];
+                lineRenderer.endColor = baseStationColors[i];
 
-                // Configure LineRenderer
-                lineRenderer.startWidth = 0.05f;  // Start width
-                lineRenderer.endWidth = 0.05f;    // End width
-                lineRenderer.material = new Material(Shader.Find("Sprites/Default")); // Set material
-                lineRenderer.startColor = baseStationColors[i]; // Set start color for the ray
-                lineRenderer.endColor = baseStationColors[i];   // Set end color for the ray
-
-                // Store ray data in the list
-                Ray ray = new Ray(baseStationPosition, direction);
-                RayData rayData = new RayData(ray,lineRenderer,i,baseStationColors[i],maxReflections);
+                Ray ray = new Ray(baseStationPosition, worldDirection);
+                RayData rayData = new RayData(ray, lineRenderer, i, baseStationColors[i], maxReflections);
                 rays.Add(rayData);
             }
+
         }
 
         Debug.Log($"Total Rays Generated: {rays.Count}");
@@ -177,9 +233,22 @@ public class MonteCarloRayTracing : MonoBehaviour
         return new Vector3(x, y, z);
     }
 
+    public Vector3 SphericalToCartesianRad(float azimuthRad, float elevationRad)
+    {
+        float x = Mathf.Cos(elevationRad) * Mathf.Cos(azimuthRad);
+        float y = Mathf.Sin(elevationRad);
+        float z = Mathf.Cos(elevationRad) * Mathf.Sin(azimuthRad);
+        return new Vector3(x, y, z);
+    }
+
     public Vector3[] GetBaseStationPositions()
     {
         return baseStationPositions;
+    }
+
+    public List<RayData> GetRayData()
+    {
+        return rays;
     }
 
 }
