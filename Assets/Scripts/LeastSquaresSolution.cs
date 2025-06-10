@@ -31,6 +31,8 @@ public class LeastSquaresSolution : MonoBehaviour
         }
         for(int m=0;m<measureCnt;m++)
         {
+            // ( H ) is a coefficient matrix calculated from the azimuth and elevation angles.
+            // ( Y ) is a vector containing the relationship between the target location and the base station location.
             Matrix<float> H = DenseMatrix.Create(2 * baseStationPositions.Count, 3, 0f);
             Vector<float> Y = DenseVector.Create(2 * baseStationPositions.Count, 0f);
 
@@ -40,9 +42,7 @@ public class LeastSquaresSolution : MonoBehaviour
                 float ele = elevations[m][i] ?? 0f;
                 if (float.IsNaN(azi) || float.IsNaN(ele))
                     continue;
-                // azimuth_angles += randn * 1e-2;
-                // elevation_angles += randn * 1e-2;
-
+                    
                 float px = baseStationPositions[i].x;
                 float py = baseStationPositions[i].z;
                 float pz = baseStationPositions[i].y;
@@ -64,7 +64,9 @@ public class LeastSquaresSolution : MonoBehaviour
 
             }
 
-            // Least squares solution：X = pinv(H) * Y
+            // Solve a linear system of equations using pseudoinverse (pinv) 
+            // to estimate the position of a target. 
+            // Pseudoinverse solving is useful for incomplete or overdetermined systems of equations.
             Vector3 estimatedPosition = SolveLeastSquares(H, Y);
             Debug.Log("Estimated position: " + estimatedPosition);
             ShowEstimatedPoint(estimatedPosition,m);
@@ -103,7 +105,7 @@ public class LeastSquaresSolution : MonoBehaviour
         cube.transform.localScale = Vector3.one * 0.2f;
         // Color
         Renderer renderer = cube.GetComponent<Renderer>();
-        renderer.material.color = Color.yellow;
+        renderer.material.color = Color.blue;
         // Name
         cube.name = "EstimatedPositionCube_" + i;
     }

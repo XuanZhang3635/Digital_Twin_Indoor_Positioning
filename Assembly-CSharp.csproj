@@ -65,14 +65,24 @@
     <Analyzer Include="/Applications/Unity/Hub/Editor/6000.0.26f1/Unity.app/Contents/Tools/Unity.SourceGenerators/Unity.UIToolkit.SourceGenerator.dll" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets/Scripts/VonM_RayTracing_Multi.cs" />
+    <Compile Include="Assets/Scripts/Gau_MH_RayTracing_Multi.cs" />
+    <Compile Include="Assets/Scripts/VoxelEstimator.cs" />
     <Compile Include="Assets/FinalPositionEstimator.cs" />
+    <Compile Include="Assets/Scripts/GMMTableReader.cs" />
     <Compile Include="Assets/Scripts/GlobalDataManager.cs" />
+    <Compile Include="Assets/Scripts/TestRayTracing.cs" />
     <Compile Include="Assets/Scripts/IntersectionDetector.cs" />
+    <Compile Include="Assets/Scripts/Objects/GMMTypes.cs" />
     <Compile Include="Assets/Scripts/Objects/RayData.cs" />
+    <Compile Include="Assets/Scripts/Gau_RayTracing_Multi.cs" />
     <Compile Include="Assets/Scripts/IntersectionLogger.cs" />
     <Compile Include="Assets/TutorialInfo/Scripts/Readme.cs" />
     <Compile Include="Assets/Scripts/MonteCarloRayTracing.cs" />
+    <Compile Include="Assets/Scripts/GMMTestQuery.cs" />
     <Compile Include="Assets/Scripts/Objects/LocalizationData.cs" />
+    <Compile Include="Assets/Scripts/KDEEstimator.cs" />
+    <Compile Include="Assets/Scripts/GMMTableBuilder.cs" />
     <Compile Include="Assets/Scripts/RayTracing_MultiFrame.cs" />
     <Compile Include="Assets/Scripts/VoxelIntersectionCounter.cs" />
     <Compile Include="Assets/Scripts/LeastSquaresSolution.cs" />

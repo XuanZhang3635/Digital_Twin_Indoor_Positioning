@@ -1,14 +1,14 @@
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
+using System.Linq;
 
 public class VoxelIntersectionCounter : MonoBehaviour
 {
-    public float voxelSize = 0.5f; 
+    public float voxelSize = 0.5f;
     public string outputFilePath = "Assets/voxel_hits.txt";
-	public string heatmapFilePath = "Assets/voxel_heatmap.png"; 
 
-    private Dictionary<Vector3Int, HashSet<int>> voxelHits = new Dictionary<Vector3Int, HashSet<int>>();
+    private Dictionary<Vector3Int, List<int>> voxelHits = new Dictionary<Vector3Int, List<int>>();
     private Dictionary<Vector3Int, int> voxelIntersectionCounts = new Dictionary<Vector3Int, int>();
 
     private Vector3 minBounds;
@@ -27,27 +27,102 @@ public class VoxelIntersectionCounter : MonoBehaviour
             foreach (var voxel in visited)
             {
                 if (!voxelHits.ContainsKey(voxel))
-                    voxelHits[voxel] = new HashSet<int>();
+                    voxelHits[voxel] = new List<int>();
 
                 voxelHits[voxel].Add(rays[i].sourceID);
             }
         }
 
+        // 假设你有4个基站（编号为0,1,2,3），可根据需要修改
+        int numBaseStations = 4;
+
         foreach (var kvp in voxelHits)
         {
-            if (kvp.Value.Count >= 4)
-            {
-                if (!voxelIntersectionCounts.ContainsKey(kvp.Key))
-                    voxelIntersectionCounts[kvp.Key] = 0;
-
-                voxelIntersectionCounts[kvp.Key]++;
-            }
+            int beta = CountCombinations(kvp.Value, numBaseStations);
+            if (beta > 0)
+                voxelIntersectionCounts[kvp.Key] = beta;
         }
 
         SaveResultsToCSV();
-		SaveHeatmapAsImage();
-        Debug.Log($"Stat Finish! The number of voxel is ：{voxelIntersectionCounts.Count}");
+
+        // 输出最大 β_k 所在的 voxel 坐标
+        if (voxelIntersectionCounts.Count > 0)
+        {
+            var best = voxelIntersectionCounts.OrderByDescending(x => x.Value).First();
+            Vector3 bestPos = VoxelToWorld(best.Key);
+            Debug.Log($"Max β_k = {best.Value} at position {bestPos}");
+        }
+
+        Debug.Log($"Stat Finish! The number of voxels is: {voxelIntersectionCounts.Count}");
     }
+    int CountCombinations(List<int> sourceIDs, int numBaseStations)
+    {
+        Dictionary<int, int> bsCounts = new Dictionary<int, int>();
+
+        foreach (int id in sourceIDs)
+        {
+            if (!bsCounts.ContainsKey(id))
+                bsCounts[id] = 0;
+            bsCounts[id]++;
+        }
+
+        if (bsCounts.Count < numBaseStations)
+            return 0;
+
+        int combinations = 1;
+        for (int i = 0; i < numBaseStations; i++)
+        {
+            if (!bsCounts.ContainsKey(i)) return 0;
+            combinations *= bsCounts[i];
+        }
+
+        return combinations;
+    }
+
+    // public float voxelSize = 0.5f; 
+    // public string outputFilePath = "Assets/voxel_hits.txt";
+    // // public string heatmapFilePath = "Assets/voxel_heatmap.png"; 
+
+    // private Dictionary<Vector3Int, HashSet<int>> voxelHits = new Dictionary<Vector3Int, HashSet<int>>();
+    // private Dictionary<Vector3Int, int> voxelIntersectionCounts = new Dictionary<Vector3Int, int>();
+
+    // private Vector3 minBounds;
+    // private Vector3 maxBounds;
+
+    // public void CountVoxels(List<RayData> rays)
+    // {
+    //     voxelHits.Clear();
+    //     voxelIntersectionCounts.Clear();
+    //     ComputeBoundsFromRays(rays);
+
+    //     for (int i = 0; i < rays.Count; i++)
+    //     {
+    //         HashSet<Vector3Int> visited = GetVoxelsAlongRay(rays[i].ray.origin, rays[i].ray.direction.normalized * 50f);
+
+    //         foreach (var voxel in visited)
+    //         {
+    //             if (!voxelHits.ContainsKey(voxel))
+    //                 voxelHits[voxel] = new HashSet<int>();
+
+    //             voxelHits[voxel].Add(rays[i].sourceID);
+    //         }
+    //     }
+
+    //     foreach (var kvp in voxelHits)
+    //     {
+    //         if (kvp.Value.Count >= 4)
+    //         {
+    //             if (!voxelIntersectionCounts.ContainsKey(kvp.Key))
+    //                 voxelIntersectionCounts[kvp.Key] = 0;
+
+    //             voxelIntersectionCounts[kvp.Key]++;
+    //         }
+    //     }
+
+    //     SaveResultsToCSV();
+    // 	// SaveHeatmapAsImage();
+    //     Debug.Log($"Stat Finish! The number of voxel is ：{voxelIntersectionCounts.Count}");
+    // }
 
     void ComputeBoundsFromRays(List<RayData> rays)
     {
@@ -80,9 +155,9 @@ public class VoxelIntersectionCounter : MonoBehaviour
         Vector3 endPos = origin + direction;
 
         Vector3 deltaDist = new Vector3(
-            Mathf.Abs(1f / direction.x),
-            Mathf.Abs(1f / direction.y),
-            Mathf.Abs(1f / direction.z)
+            Mathf.Abs(voxelSize / direction.x),
+            Mathf.Abs(voxelSize / direction.y),
+            Mathf.Abs(voxelSize / direction.z)
         );
 
         Vector3Int step = new Vector3Int(
@@ -176,66 +251,114 @@ public class VoxelIntersectionCounter : MonoBehaviour
         Debug.Log($"Voxels saved as : {outputFilePath}");
     }
 
-	void SaveHeatmapAsImage()
-	{
-		int xSize = Mathf.CeilToInt((maxBounds.x - minBounds.x) / voxelSize);
-		int zSize = Mathf.CeilToInt((maxBounds.z - minBounds.z) / voxelSize);
+    public Vector3 ComputeLocalWeightedCentroid()
+    {
+        if (voxelIntersectionCounts.Count == 0)
+        {
+            Debug.LogWarning("voxelIntersectionCounts为空！");
+            return Vector3.zero;
+        }
 
-		int[,] heatmap2D = new int[xSize, zSize];
+        // 找到最高击中次数的体素
+        var maxVoxel = voxelIntersectionCounts.OrderByDescending(kvp => kvp.Value).First().Key;
 
-		foreach (var kvp in voxelIntersectionCounts)
-		{
-			Vector3Int voxel = kvp.Key;
-			int count = kvp.Value;
+        // 在3x3x3邻域内取体素
+        List<Vector3> positions = new List<Vector3>();
+        List<float> weights = new List<float>();
 
-			heatmap2D[voxel.x, voxel.z] += count;
-		}
+        for (int dx = -1; dx <= 1; dx++)
+        {
+            for (int dy = -1; dy <= 1; dy++)
+            {
+                for (int dz = -1; dz <= 1; dz++)
+                {
+                    Vector3Int neighbor = new Vector3Int(
+                        maxVoxel.x + dx,
+                        maxVoxel.y + dy,
+                        maxVoxel.z + dz
+                    );
 
-		Texture2D texture = new Texture2D(xSize, zSize);
-		int maxCount = 1;
+                    if (voxelIntersectionCounts.TryGetValue(neighbor, out int count))
+                    {
+                        Vector3 pos = VoxelToWorld(neighbor);
+                        positions.Add(pos);
+                        weights.Add(count);
+                    }
+                }
+            }
+        }
 
-		foreach (int count in heatmap2D)
-			maxCount = Mathf.Max(maxCount, count);
+        if (positions.Count == 0) return VoxelToWorld(maxVoxel); // fallback
 
-		for (int x = 0; x < xSize; x++)
-		{
-			for (int z = 0; z < zSize; z++)
-			{
-				float t = Mathf.Clamp01((float)heatmap2D[x, z] / maxCount);
-				Color color = GetHeatmapColor((int)t);
-				texture.SetPixel(x, z, color);
-			}
-		}
+        float totalWeight = weights.Sum();
+        Vector3 weightedSum = Vector3.zero;
+        for (int i = 0; i < positions.Count; i++)
+        {
+            weightedSum += positions[i] * weights[i];
+        }
 
-		texture.Apply();
+        return weightedSum / totalWeight;
+    }
 
-		byte[] pngData = texture.EncodeToPNG();
-		File.WriteAllBytes(heatmapFilePath, pngData);
-		Debug.Log("热力图已保存为图片：" + heatmapFilePath);
-	}
 
-	// void OnDrawGizmos()
-	// {
-	// 	if (voxelIntersectionCounts == null) return;
+    // void SaveHeatmapAsImage()
+    // {
+    // 	int xSize = Mathf.CeilToInt((maxBounds.x - minBounds.x) / voxelSize);
+    // 	int zSize = Mathf.CeilToInt((maxBounds.z - minBounds.z) / voxelSize);
 
-	// 	foreach (var kvp in voxelIntersectionCounts)
-	// 	{
-	// 		Vector3 voxelPos = VoxelToWorld(kvp.Key);
-	// 		int hitCount = kvp.Value;
+    // 	int[,] heatmap2D = new int[xSize, zSize];
 
-	// 		// 根据命中次数获取颜色
-	// 		Color color = GetHeatmapColor(hitCount);
+    // 	foreach (var kvp in voxelIntersectionCounts)
+    // 	{
+    // 		Vector3Int voxel = kvp.Key;
+    // 		int count = kvp.Value;
 
-	// 		// 使用 Gizmos 绘制体素，设置颜色
-	// 		Gizmos.color = color;
-	// 		Gizmos.DrawCube(voxelPos, Vector3.one * (voxelSize-0.05f)); // 使用一个小立方体表示体素
-	// 	}
-	// }
+    // 		heatmap2D[voxel.x, voxel.z] += count;
+    // 	}
 
-	Color GetHeatmapColor(int hitCount)
-	{
-		float t = Mathf.Clamp01(hitCount / 10f);  
-		return Color.Lerp(Color.blue, Color.red, t); 
-	}
+    // 	Texture2D texture = new Texture2D(xSize, zSize);
+    // 	int maxCount = 1;
+
+    // 	foreach (int count in heatmap2D)
+    // 		maxCount = Mathf.Max(maxCount, count);
+
+    // 	for (int x = 0; x < xSize; x++)
+    // 	{
+    // 		for (int z = 0; z < zSize; z++)
+    // 		{
+    // 			float t = Mathf.Clamp01((float)heatmap2D[x, z] / maxCount);
+    // 			Color color = GetHeatmapColor((int)t);
+    // 			texture.SetPixel(x, z, color);
+    // 		}
+    // 	}
+
+    // 	texture.Apply();
+
+    // 	byte[] pngData = texture.EncodeToPNG();
+    // 	File.WriteAllBytes(heatmapFilePath, pngData);
+    // 	Debug.Log("The heat map saved as：" + heatmapFilePath);
+    // }
+
+    // void OnDrawGizmos()
+    // {
+    // 	if (voxelIntersectionCounts == null) return;
+
+    // 	foreach (var kvp in voxelIntersectionCounts)
+    // 	{
+    // 		Vector3 voxelPos = VoxelToWorld(kvp.Key);
+    // 		int hitCount = kvp.Value;
+
+    // 		Color color = GetHeatmapColor(hitCount);
+
+    // 		Gizmos.color = color;
+    // 		Gizmos.DrawCube(voxelPos, Vector3.one * (voxelSize-0.05f)); // 使用一个小立方体表示体素
+    // 	}
+    // }
+
+    // Color GetHeatmapColor(int hitCount)
+    // {
+    // 	float t = Mathf.Clamp01(hitCount / 10f);  
+    // 	return Color.Lerp(Color.blue, Color.red, t); 
+    // }
 
 }

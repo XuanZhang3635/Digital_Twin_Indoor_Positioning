@@ -25,7 +25,7 @@ public class GlobalDataManager
 
     private void LoadData()
     {
-        string path = Path.Combine(Application.dataPath, "made-data-test-1.json");
+        string path = Path.Combine(Application.dataPath, "made-data-test-2.json");
         if (File.Exists(path))
         {
             string json = File.ReadAllText(path);
